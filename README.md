@@ -8,7 +8,7 @@
 |---|---|
 | Product Owner | Mohan |
 
-| Scrum Master |Ahmad Alisha |
+| Scrum Master |Ahmad Alisha  |
 | Developer |Venkat |
 | Developer |Samba shiva rao 
 | Developer |Deeksith|
