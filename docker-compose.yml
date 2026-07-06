@@ -1,37 +1,47 @@
-# ---------------------------------------------------------------------------
-# Replace service-a / service-b with your actual service names.
-# Add a database service if your project needs one (see commented example).
-# Run everything with:  docker compose up --build
-# ---------------------------------------------------------------------------
-
 services:
+  db:
+    image: postgres:17-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: tasks_user
+      POSTGRES_PASSWORD: tasks_pw
+      POSTGRES_DB: tasks
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tasks_user -d tasks"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-  service-a:
-    build: ./services/service-a
+  backend:
+    build: ./backend
+    container_name: fastapi_backend
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend:/app
     environment:
-      - PORT=8000
-    # depends_on:
-    #   - db
+      DATABASE_URL: postgresql://${db_user}:${db_user_password}@db:5432/tasks
+      JWT_SECRET: change-me-in-production
+    depends_on:
+      db:
+        condition: service_healthy
 
-  service-b:
-    build: ./services/service-b
+  frontend:
+    build: ./frontend
+    container_name: react_frontend
     ports:
-      - "3000:3000"
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
-      - PORT=3000
-      - SERVICE_A_URL=http://service-a:8000
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
 
-  # Uncomment and configure a database when you need one:
-  # db:
-  #   image: postgres:15
-  #   environment:
-  #     POSTGRES_USER: ${DB_USER}
-  #     POSTGRES_PASSWORD: ${DB_PASSWORD}
-  #     POSTGRES_DB: ${DB_NAME}
-  #   volumes:
-  #     - pgdata:/var/lib/postgresql/data
-
-# volumes:
-#   pgdata:
+volumes:
+  db_data:
